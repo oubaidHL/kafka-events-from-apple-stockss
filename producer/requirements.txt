@@ -1,0 +1,4 @@
+yfinance
+kafka-python
+confluent-kafka
+datetime

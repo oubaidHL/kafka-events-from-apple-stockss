@@ -1,0 +1,56 @@
+version: '3'
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    ports:
+      - "2181:2181"
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+    container_name: zookeeper
+    networks:
+      - mynetwork
+
+  kafka:
+    build:
+      context: ./server  # Directory containing your Kafka server Dockerfile
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092  # Use 'kafka' as the hostname
+      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+    container_name: kafka
+    networks:
+      - mynetwork
+    extra_hosts:
+      - "kafka:192.168.0.2"  # Replace with the desired static IP for Kafka
+
+  producer:
+    build:
+      context: ./producer  # Directory containing your producer Dockerfile
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=192.168.0.2:9092  # Use the static IP for Kafka
+      - KAFKA_TOPIC=tech
+    container_name: producer
+    networks:
+      - mynetwork
+
+  consumer:
+    build:
+      context: ./consumer  # Directory containing your consumer Dockerfile
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=192.168.0.2:9092  # Use the static IP for Kafka
+      - KAFKA_TOPIC=tech
+    container_name: consumer
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
